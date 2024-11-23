@@ -14,6 +14,52 @@
 <link rel="icon" type="image/png" sizes="16x16" href="hit-16x16.png">
 
 <script>
+// Background Music Control
+let bgMusic;
+window.onload = function() {
+    bgMusic = new Audio('music.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.5; // Set volume to 50%
+    
+    // Add error handling for audio loading
+    bgMusic.addEventListener('error', function(e) {
+        console.log("Error loading audio: ", e);
+    });
+    
+    // Only try to play if the audio loads successfully
+    bgMusic.addEventListener('canplaythrough', function() {
+        try {
+            bgMusic.play().catch(function(error) {
+                console.log("Playback failed:", error);
+            });
+        } catch(e) {
+            console.log("Play attempt failed:", e);
+        }
+    });
+
+    // Pause music when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            bgMusic.pause();
+        } else {
+            if (bgMusic && !bgMusic.muted) {
+                bgMusic.play().catch(function(error) {
+                    console.log("Playback failed:", error);
+                });
+            }
+        }
+    });
+};
+
+// Function to toggle mute
+function toggleMute() {
+    if (bgMusic) {
+        bgMusic.muted = !bgMusic.muted;
+        const muteButton = document.getElementById('muteButton');
+        muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
+    }
+}
+
 // Animate the title text
 (function() {
     let title = "HIT's Bio ";  // Added space at end for smooth looping
@@ -95,6 +141,26 @@ function showPopup() {
     font-family: 'Arial', sans-serif;
     overflow: hidden;
     flex-direction: column;
+  }
+
+  #muteButton {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: white;  /* This was already white, but making it explicit */
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    animation: textGlowPulse 2s ease-in-out infinite;
+    filter: brightness(1);  /* Ensure white color is pure */
   }
 
   .popup {
@@ -287,6 +353,12 @@ function showPopup() {
       width: 20px;
       height: 20px;
     }
+
+    #muteButton {
+      width: 35px;
+      height: 35px;
+      font-size: 18px;
+    }
   }
 
   @media screen and (max-width: 480px) {
@@ -309,10 +381,17 @@ function showPopup() {
       width: 18px;
       height: 18px;
     }
+
+    #muteButton {
+      width: 30px;
+      height: 30px;
+      font-size: 16px;
+    }
   }
 </style>
 </head>
 <body>
+  <button id="muteButton" onclick="toggleMute()">🔊</button>
   <div class="content-wrapper">
     <div class="hit-text">HIT</div>
     <div class="button-container">
