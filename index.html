@@ -16,33 +16,40 @@
 <script>
 // Background Music Control
 let bgMusic;
+let hasInteracted = false;
+
 window.onload = function() {
     bgMusic = new Audio('music.mp3');
     bgMusic.loop = true;
-    bgMusic.volume = 0.5; // Set volume to 50%
+    bgMusic.volume = 0.5;
     
     // Add error handling for audio loading
     bgMusic.addEventListener('error', function(e) {
         console.log("Error loading audio: ", e);
     });
-    
-    // Only try to play if the audio loads successfully
-    bgMusic.addEventListener('canplaythrough', function() {
-        try {
-            bgMusic.play().catch(function(error) {
-                console.log("Playback failed:", error);
-            });
-        } catch(e) {
-            console.log("Play attempt failed:", e);
+
+    // Add click listener to document for first interaction
+    document.addEventListener('click', function initAudio() {
+        if (!hasInteracted) {
+            hasInteracted = true;
+            try {
+                bgMusic.play().catch(function(error) {
+                    console.log("Playback failed:", error);
+                });
+            } catch(e) {
+                console.log("Play attempt failed:", e);
+            }
+            // Remove the listener after first interaction
+            document.removeEventListener('click', initAudio);
         }
-    });
+    }, { once: true });
 
     // Pause music when tab is not visible
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
-            bgMusic.pause();
+            if (bgMusic) bgMusic.pause();
         } else {
-            if (bgMusic && !bgMusic.muted) {
+            if (bgMusic && !bgMusic.muted && hasInteracted) {
                 bgMusic.play().catch(function(error) {
                     console.log("Playback failed:", error);
                 });
@@ -51,12 +58,20 @@ window.onload = function() {
     });
 };
 
-// Function to toggle mute
+// Update the toggleMute function
 function toggleMute() {
     if (bgMusic) {
         bgMusic.muted = !bgMusic.muted;
         const muteButton = document.getElementById('muteButton');
         muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
+        
+        // If unmuting and haven't started playing yet, try to play
+        if (!bgMusic.muted && !hasInteracted) {
+            hasInteracted = true;
+            bgMusic.play().catch(function(error) {
+                console.log("Playback failed:", error);
+            });
+        }
     }
 }
 
@@ -152,15 +167,18 @@ function showPopup() {
     border-radius: 50%;
     background: transparent;
     border: none;
-    color: white;  /* This was already white, but making it explicit */
+    color: white;  /* Ensuring pure white color */
     font-size: 20px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.3s ease;
-    animation: textGlowPulse 2s ease-in-out infinite;
-    filter: brightness(1);  /* Ensure white color is pure */
+    transition: opacity 0.3s ease; /* Updated for opacity transition */
+    opacity: 0.8; /* Make it slightly transparent to indicate inactive state */
+  }
+
+  #muteButton.active {
+    opacity: 1;
   }
 
   .popup {
