@@ -33,28 +33,12 @@ window.onload = function() {
         console.log("Error loading audio: ", e);
     });
 
-    // Add click listener to document for first interaction
-    document.addEventListener('click', function initAudio() {
-        if (!hasInteracted) {
-            hasInteracted = true;
-            try {
-                bgMusic.play().catch(function(error) {
-                    console.log("Playback failed:", error);
-                });
-            } catch(e) {
-                console.log("Play attempt failed:", e);
-            }
-            // Remove the listener after first interaction
-            document.removeEventListener('click', initAudio);
-        }
-    }, { once: true });
-
-    // Pause music when tab is not visible
+    // Only handle visibility change if user has unmuted
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
             if (bgMusic) bgMusic.pause();
         } else {
-            if (bgMusic && !bgMusic.muted && hasInteracted) {
+            if (bgMusic && !bgMusic.muted) {
                 bgMusic.play().catch(function(error) {
                     console.log("Playback failed:", error);
                 });
@@ -63,19 +47,20 @@ window.onload = function() {
     });
 };
 
-// Update the toggleMute function
+// Update the toggleMute function to handle play/pause:
 function toggleMute() {
     if (bgMusic) {
         bgMusic.muted = !bgMusic.muted;
         const muteButton = document.getElementById('muteButton');
         muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
         
-        // If unmuting and haven't started playing yet, try to play
-        if (!bgMusic.muted && !hasInteracted) {
-            hasInteracted = true;
+        // If unmuting, try to play
+        if (!bgMusic.muted) {
             bgMusic.play().catch(function(error) {
                 console.log("Playback failed:", error);
             });
+        } else {
+            bgMusic.pause(); // Pause when muting
         }
     }
 }
