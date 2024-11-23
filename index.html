@@ -16,7 +16,7 @@
     setInterval(function() {
         position--;
         if(position < 0) {
-            position = title.length - 1;
+            position = title.length - 0;
         }
         document.title = title.substring(position) + title.substring(0, position);
     }, 400); // Speed of movement (milliseconds)
