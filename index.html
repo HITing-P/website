@@ -1,7 +1,27 @@
 <html><head><base href="/">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HIT - Personal Website</title>
+<title>HIT's bio</title>
+<!-- Favicon links for various devices/contexts -->
+<link rel="icon" type="image/x-icon" href="hit.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="hit.png">
+<link rel="icon" type="image/png" sizes="32x32" href="hit-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="hit-16x16.png">
+<script>
+// Animate the title text
+(function() {
+    let title = "HIT's bio ";  // Added space at end for smooth looping
+    let position = 0;
+    
+    setInterval(function() {
+        position--;
+        if(position < 0) {
+            position = title.length - 1;
+        }
+        document.title = title.substring(position) + title.substring(0, position);
+    }, 400); // Speed of movement (milliseconds)
+})();
+</script>
 <style>
   body {
     margin: 0;
