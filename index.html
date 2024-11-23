@@ -14,7 +14,7 @@
 <script>
 // Animate the title text
 (function() {
-    let title = "HIT's Bio ";  // Added space at end for smooth looping
+    let title = "HIT's bio ";  // Added space at end for smooth looping
     let position = 0;
     
     setInterval(function() {
@@ -93,6 +93,40 @@
     100% {
       text-shadow: 0 0 5px #fff,
                    0 0 10px #fff;
+    }
+  }
+
+  /* Mobile Responsive Design */
+  @media screen and (max-width: 768px) {
+    .hit-text {
+      font-size: 6rem; /* Increased from 4rem */
+      letter-spacing: 5px;
+    }
+
+    .button-container {
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .social-button {
+      font-size: 1.8rem; /* Increased from 1.2rem */
+      letter-spacing: 2px;
+    }
+
+    .separator {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .hit-text {
+      font-size: 5rem; /* Increased from 3rem */
+      letter-spacing: 3px;
+    }
+
+    .social-button {
+      font-size: 1.5rem; /* Increased from 1rem */
+      padding: 8px 12px;
     }
   }
 </style>
