@@ -22,6 +22,11 @@ window.onload = function() {
     bgMusic = new Audio('music.mp3');
     bgMusic.loop = true;
     bgMusic.volume = 0.5;
+    bgMusic.muted = true; // Start muted
+    
+    // Update mute button to show muted state initially
+    const muteButton = document.getElementById('muteButton');
+    muteButton.textContent = '🔇'; // Set initial state to muted icon
     
     // Add error handling for audio loading
     bgMusic.addEventListener('error', function(e) {
@@ -409,7 +414,7 @@ function showPopup() {
 </style>
 </head>
 <body>
-  <button id="muteButton" onclick="toggleMute()">🔊</button>
+  <button id="muteButton" onclick="toggleMute()">🔇</button>
   <div class="content-wrapper">
     <div class="hit-text">HIT</div>
     <div class="button-container">
