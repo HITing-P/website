@@ -163,11 +163,13 @@ function showPopup() {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 0.3s ease; /* Updated for opacity transition */
+    transition: opacity 0.3s ease, transform 0.2s ease;
     opacity: 0.8; /* Make it slightly transparent to indicate inactive state */
+    animation: textGlowPulse 2s ease-in-out infinite;
   }
 
-  #muteButton.active {
+  #muteButton:hover {
+    transform: scale(1.1);
     opacity: 1;
   }
 
