@@ -21,7 +21,7 @@ let hasInteracted = false;
 window.onload = function() {
     bgMusic = new Audio('music.mp3');
     bgMusic.loop = true;
-    bgMusic.volume = 0.1;
+    bgMusic.volume = 0.5;
     bgMusic.muted = true; // Start muted
     
     // Update mute button to show muted state initially
@@ -33,12 +33,28 @@ window.onload = function() {
         console.log("Error loading audio: ", e);
     });
 
-    // Only handle visibility change if user has unmuted
+    // Add click listener to document for first interaction
+    document.addEventListener('click', function initAudio() {
+        if (!hasInteracted) {
+            hasInteracted = true;
+            try {
+                bgMusic.play().catch(function(error) {
+                    console.log("Playback failed:", error);
+                });
+            } catch(e) {
+                console.log("Play attempt failed:", e);
+            }
+            // Remove the listener after first interaction
+            document.removeEventListener('click', initAudio);
+        }
+    }, { once: true });
+
+    // Pause music when tab is not visible
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
             if (bgMusic) bgMusic.pause();
         } else {
-            if (bgMusic && !bgMusic.muted) {
+            if (bgMusic && !bgMusic.muted && hasInteracted) {
                 bgMusic.play().catch(function(error) {
                     console.log("Playback failed:", error);
                 });
@@ -47,20 +63,19 @@ window.onload = function() {
     });
 };
 
-// Update the toggleMute function to handle play/pause:
+// Update the toggleMute function
 function toggleMute() {
     if (bgMusic) {
         bgMusic.muted = !bgMusic.muted;
         const muteButton = document.getElementById('muteButton');
         muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
         
-        // If unmuting, try to play
-        if (!bgMusic.muted) {
+        // If unmuting and haven't started playing yet, try to play
+        if (!bgMusic.muted && !hasInteracted) {
+            hasInteracted = true;
             bgMusic.play().catch(function(error) {
                 console.log("Playback failed:", error);
             });
-        } else {
-            bgMusic.pause(); // Pause when muting
         }
     }
 }
@@ -157,19 +172,18 @@ function showPopup() {
     border-radius: 50%;
     background: transparent;
     border: none;
-    color: white;  /* Ensuring pure white color */
+    color: white;
     font-size: 20px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 0.3s ease, transform 0.2s ease;
-    opacity: 0.8; /* Make it slightly transparent to indicate inactive state */
-    animation: textGlowPulse 2s ease-in-out infinite;
+    transition: opacity 0.3s ease;
+    opacity: 0.8;
+    animation: textGlowPulse 2s ease-in-out infinite; /* Added this line */
   }
 
-  #muteButton:hover {
-    transform: scale(1.1);
+  #muteButton.active {
     opacity: 1;
   }
 
@@ -216,6 +230,7 @@ function showPopup() {
     justify-content: center;
     text-align: center;
     width: 100%;
+    position: relative; /* Add this */
   }
 
   .hit-text {
@@ -235,6 +250,7 @@ function showPopup() {
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
+    transform: translateX(52px); /* Changed from 50px to 52px for another slight right movement */
   }
 
   .social-button {
@@ -337,6 +353,7 @@ function showPopup() {
     }
 
     .button-container {
+      transform: translateX(0); /* Reset transform on mobile */
       flex-direction: column;
       gap: 15px;
     }
@@ -412,6 +429,8 @@ function showPopup() {
       <a href="https://steamcommunity.com/id/SheepyGirlie/" class="social-button">CS2</a>
       <span class="separator">•</span>
       <a href="https://discord.gg/hvhcrew" class="social-button">DISCORD</a>
+      <span class="separator">•</span>
+      <a href="https://t.me/HITing_P" class="social-button">TELEGRAM</a>
     </div>
     <div class="icon-container">
       <a href="https://www.moneybot.cash/forums/index.php?/profile/449-hit/" class="icon-button">
