@@ -21,7 +21,7 @@ let hasInteracted = false;
 window.onload = function() {
     bgMusic = new Audio('music.wav');
     bgMusic.loop = true;
-    bgMusic.volume = 1;
+    bgMusic.volume = 0.5;
     bgMusic.muted = true; // Start muted
     
     // Update mute button to show muted state initially
@@ -147,6 +147,72 @@ function showPopup() {
         }, 300);
     }, 2000);
 }
+
+let typingTexts = [
+    "hope kraken doesnt eat the server wires again",
+    "hack vs hack enthusiast", 
+    "mmm i crave for Батон",
+    "pasting specialist",
+    "nice beats DYLY",
+    "u got tapped? cry more",
+    "1 tick dt go brrrr",
+    "skill issue detected",
+    "ratio + cope + mald",
+    "hvh is dead? lol no",
+    "imagine",
+    "best configs in discord",
+    "best en1gma.tech and memedora.club admin"
+];
+
+let currentTextIndex = 0;
+let currentCharIndex = 0;
+let typingElement = null;
+
+setTimeout(() => {
+    
+    // Create and add typing text element
+    typingElement = document.createElement('div');
+    typingElement.className = 'typing-text';
+    document.querySelector('.content-wrapper').insertBefore(typingElement, document.querySelector('.button-container'));
+    
+    // Start typing animation
+    typeNextText();
+}, 6000);
+
+function typeNextText() {
+    currentCharIndex = 0;
+    // Get random index different from current one
+    let newIndex;
+    do {
+        newIndex = Math.floor(Math.random() * typingTexts.length);
+    } while (newIndex === currentTextIndex && typingTexts.length > 1);
+    
+    currentTextIndex = newIndex;
+    let textToType = typingTexts[currentTextIndex];
+    typingElement.textContent = '';
+    
+    let typingInterval = setInterval(() => {
+        if (currentCharIndex < textToType.length) {
+            typingElement.textContent += textToType[currentCharIndex];
+            currentCharIndex++;
+        } else {
+            clearInterval(typingInterval);
+            setTimeout(() => {
+                fadeOutText(() => {
+                    typeNextText();
+                });
+            }, 2000); // Wait 2 seconds before fading out
+        }
+    }, 100); // Typing speed (100ms between characters)
+}
+
+function fadeOutText(callback) {
+    typingElement.style.opacity = '0';
+    setTimeout(() => {
+        typingElement.style.opacity = '1';
+        callback();
+    }, 500); // Fade out duration
+}
 </script>
 
 <style>
@@ -241,6 +307,18 @@ function showPopup() {
     animation: textGlowPulse 2s ease-in-out infinite;
     margin: 0;
     padding: 0;
+    transition: transform 0.8s ease;
+  }
+
+    .typing-text {
+    color: #ffffff;
+    font-size: 1.5rem;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    min-height: 2rem;
+    animation: textGlowPulse 2s ease-in-out infinite;
+    transition: opacity 0.5s ease;
+    text-align: center;
   }
 
   .button-container {
