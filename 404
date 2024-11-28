@@ -1,0 +1,80 @@
+<html><head><base href="/" />
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.message {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 30px;
+    animation: fadeIn 2s ease-in;
+}
+
+.back-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    background-color: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: bounceIn 1s ease-out 0.5s backwards;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.back-button:hover {
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.1);
+    }
+    80% {
+        opacity: 1;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+</style>
+</head>
+<body>
+    <div class="message">
+        uh oh, i dont seem to have such page my guy, go back maybe?
+    </div>
+    <a href="https://hitable.cloud">
+        <button class="back-button">go back</button>
+    </a>
+</body>
+</html>
