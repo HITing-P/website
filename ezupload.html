@@ -169,15 +169,6 @@ button:hover {
         }
     });
 
-        if (response.ok) {
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('upload-section').style.display = 'block';
-            alert('Login successful!');
-        } else {
-            alert('Invalid login credentials.');
-        }
-    });
-
     document.getElementById('upload-form').addEventListener('submit', async function (e) {
         e.preventDefault();
         const file = document.getElementById('photo').files[0];
