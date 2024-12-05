@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stylish Photo Manager</title>
+    <title>Photo Manager</title>
     <style>
 :root {
   --accent: #1a1a1a;
@@ -109,7 +109,7 @@ button:hover {
 <body>
 <div class="container">
     <div id="login-section">
-        <h1>Welcome Back</h1>
+        <h1>Login</h1>
         <form id="login-form">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -123,42 +123,29 @@ button:hover {
         </form>
     </div>
 
-    <div id="upload-section" class="upload-section">
+    <div id="upload-section" style="display: none;">
         <h1>Upload Photo</h1>
         <form id="upload-form">
             <div class="form-group">
                 <label for="photo">Select Photo</label>
                 <input type="file" id="photo" accept=".jpg,.png" required>
             </div>
-            <div class="form-group">
-                <label for="photo-name">Photo Name</label>
-                <input type="text" id="photo-name" placeholder="Enter photo name">
-            </div>
             <button type="submit">Upload</button>
             <div id="upload-status"></div>
         </form>
-        <div class="photo-preview">
-            <img id="preview" style="display: none;">
-        </div>
     </div>
 </div>
 
 <script>
-    const GITHUB_TOKEN_FOR_PROXY = process.env.API_TOKEN;
-    const REPO_OWNER = 'HITing-P';
-    const REPO_NAME = 'website';
-    const PHOTOS_DIR = 'photos';
-
     document.getElementById('login-form').addEventListener('submit', async function (e) {
         e.preventDefault();
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
 
-        const response = await fetch(`https://api.github.com/repos/YOUR_USERNAME/PROXY_REPO/dispatches`, {
+        const response = await fetch(`https://api.github.com/repos/HITing-P/proxies.website/dispatches`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${GITHUB_TOKEN_FOR_PROXY}`,
-                Accept: 'application/vnd.github.everest-preview+json',
+                'Accept': 'application/vnd.github.everest-preview+json',
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -179,22 +166,20 @@ button:hover {
     document.getElementById('upload-form').addEventListener('submit', async function (e) {
         e.preventDefault();
         const file = document.getElementById('photo').files[0];
-        const photoName = document.getElementById('photo-name').value || file.name;
-        const reader = new FileReader();
 
+        const reader = new FileReader();
         reader.onload = async function () {
             const content = btoa(reader.result);
             const response = await fetch(
-                `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${PHOTOS_DIR}/${photoName}`,
+                `https://api.github.com/repos/HITing-P/website/contents/photos/${file.name}`,
                 {
                     method: 'PUT',
                     headers: {
-                        Authorization: `Bearer ${GITHUB_TOKEN_FOR_PROXY}`,
-                        Accept: 'application/vnd.github.v3+json',
+                        'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        message: `Add photo ${photoName}`,
+                        message: `Add photo ${file.name}`,
                         content: content,
                     }),
                 }
@@ -202,10 +187,8 @@ button:hover {
 
             const statusDiv = document.getElementById('upload-status');
             if (response.ok) {
-                statusDiv.className = 'success';
-                statusDiv.textContent = `Photo "${photoName}" uploaded successfully!`;
+                statusDiv.textContent = `Photo "${file.name}" uploaded successfully!`;
             } else {
-                statusDiv.className = 'error';
                 statusDiv.textContent = `Failed to upload photo.`;
             }
         };
