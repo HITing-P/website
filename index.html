@@ -60,9 +60,9 @@ function initAudioVisualizer() {
             if (!bgMusic.muted && !bgMusic.paused) {
                 analyser.getByteFrequencyData(dataArray);
                 
-                // Instead of clearing the canvas completely, draw a semi-transparent black rectangle
+                // Add semi-transparent black overlay instead of clearing
                 // This creates the trailing effect
-                canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Increased opacity slightly for better trail effect
+                canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Adjust the alpha value (0.2) to control trail length
                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 const barWidth = (canvas.width / bufferLength) * 2.5;
@@ -184,11 +184,11 @@ window.onload = function() {
 // Function to create snowflakes
 function createSnowflakes() {
     const snowflakeCharacters = ['❄', '❅', '❆', '•'];
-    const numberOfSnowflakes = 50; // Total snowflakes
+    const numberOfSnowflakes = 50;
     
-    function createSnowflake(isFront) {
+    function createSnowflake() {
         const snowflake = document.createElement('div');
-        snowflake.className = `snowflake ${isFront ? 'front' : 'back'}`; // Add layer class
+        snowflake.className = 'snowflake';
         snowflake.innerHTML = snowflakeCharacters[Math.floor(Math.random() * snowflakeCharacters.length)];
         
         // Random starting position
@@ -210,16 +210,15 @@ function createSnowflakes() {
         // Remove snowflake after animation completes
         setTimeout(() => {
             snowflake.remove();
-            createSnowflake(isFront); // Create new snowflake of same layer
+            createSnowflake();
         }, parseFloat(duration) * 1000);
     }
     
-    // Create initial snowflakes - half in front, half in back
+    // Create initial snowflakes
     for (let i = 0; i < numberOfSnowflakes; i++) {
         setTimeout(() => {
-            // Alternate between front and back layers
-            createSnowflake(i % 2 === 0);
-        }, Math.random() * 5000);
+            createSnowflake();
+        }, Math.random() * 5000); // Stagger creation over 5 seconds
     }
 }
 
@@ -366,7 +365,7 @@ function fadeOutText(callback) {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 0; /* Changed from -1 to 0 */
+    z-index: -1;
     opacity: 0;
     transition: opacity 0.5s ease;
 }
@@ -450,8 +449,7 @@ function fadeOutText(callback) {
     justify-content: center;
     text-align: center;
     width: 100%;
-    position: relative;
-    z-index: 1; /* Add explicit z-index */
+    position: relative; /* Add this */
   }
 
   .hit-text {
@@ -555,15 +553,8 @@ function fadeOutText(callback) {
     color: #fff;
     animation: fall linear infinite;
     pointer-events: none;
+    z-index: 1;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-}
-
-.snowflake.back {
-    z-index: -1; /* Changed from -2 to -1, will be behind visualizer */
-}
-
-.snowflake.front {
-    z-index: 2; /* Changed from 10 to 2, still in front of visualizer but not too high */
 }
 
 @keyframes fall {
