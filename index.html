@@ -366,7 +366,7 @@ function fadeOutText(callback) {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* Between back snowflakes and content */
+    z-index: 0; /* Changed from -1 to 0 */
     opacity: 0;
     transition: opacity 0.5s ease;
 }
@@ -450,7 +450,8 @@ function fadeOutText(callback) {
     justify-content: center;
     text-align: center;
     width: 100%;
-    position: relative; /* Add this */
+    position: relative;
+    z-index: 1; /* Add explicit z-index */
   }
 
   .hit-text {
@@ -554,16 +555,15 @@ function fadeOutText(callback) {
     color: #fff;
     animation: fall linear infinite;
     pointer-events: none;
-    z-index: 1;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
 }
 
 .snowflake.back {
-    z-index: -2; /* Behind everything including visualizer */
+    z-index: -1; /* Changed from -2 to -1, will be behind visualizer */
 }
 
 .snowflake.front {
-    z-index: 10; /* In front of all content */
+    z-index: 2; /* Changed from 10 to 2, still in front of visualizer but not too high */
 }
 
 @keyframes fall {
