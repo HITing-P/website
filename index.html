@@ -57,13 +57,12 @@ function initAudioVisualizer() {
         function animate() {
             requestAnimationFrame(animate);
             
-            // Clear the canvas first
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-            
             if (!bgMusic.muted && !bgMusic.paused) {
                 analyser.getByteFrequencyData(dataArray);
                 
-                canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                // Instead of clearing the canvas completely, draw a semi-transparent black rectangle
+                // This creates the trailing effect
+                canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Increased opacity slightly for better trail effect
                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 const barWidth = (canvas.width / bufferLength) * 2.5;
@@ -73,6 +72,7 @@ function initAudioVisualizer() {
                 for (let i = 0; i < bufferLength; i++) {
                     barHeight = dataArray[i] * 2;
                     
+                    // Create gradient for each bar
                     const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight/2, 0, canvas.height);
                     gradient.addColorStop(0, `rgba(255, 255, 255, ${barHeight/255})`);
                     gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
@@ -82,6 +82,9 @@ function initAudioVisualizer() {
                     
                     x += barWidth + 1;
                 }
+            } else {
+                // Clear canvas when audio is muted or paused
+                canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
         
@@ -181,11 +184,11 @@ window.onload = function() {
 // Function to create snowflakes
 function createSnowflakes() {
     const snowflakeCharacters = ['❄', '❅', '❆', '•'];
-    const numberOfSnowflakes = 50;
+    const numberOfSnowflakes = 50; // Total snowflakes
     
-    function createSnowflake() {
+    function createSnowflake(isFront) {
         const snowflake = document.createElement('div');
-        snowflake.className = 'snowflake';
+        snowflake.className = `snowflake ${isFront ? 'front' : 'back'}`; // Add layer class
         snowflake.innerHTML = snowflakeCharacters[Math.floor(Math.random() * snowflakeCharacters.length)];
         
         // Random starting position
@@ -207,15 +210,16 @@ function createSnowflakes() {
         // Remove snowflake after animation completes
         setTimeout(() => {
             snowflake.remove();
-            createSnowflake();
+            createSnowflake(isFront); // Create new snowflake of same layer
         }, parseFloat(duration) * 1000);
     }
     
-    // Create initial snowflakes
+    // Create initial snowflakes - half in front, half in back
     for (let i = 0; i < numberOfSnowflakes; i++) {
         setTimeout(() => {
-            createSnowflake();
-        }, Math.random() * 5000); // Stagger creation over 5 seconds
+            // Alternate between front and back layers
+            createSnowflake(i % 2 === 0);
+        }, Math.random() * 5000);
     }
 }
 
@@ -362,7 +366,7 @@ function fadeOutText(callback) {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
+    z-index: -1; /* Between back snowflakes and content */
     opacity: 0;
     transition: opacity 0.5s ease;
 }
@@ -552,6 +556,14 @@ function fadeOutText(callback) {
     pointer-events: none;
     z-index: 1;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.snowflake.back {
+    z-index: -2; /* Behind everything including visualizer */
+}
+
+.snowflake.front {
+    z-index: 10; /* In front of all content */
 }
 
 @keyframes fall {
