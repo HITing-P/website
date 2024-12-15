@@ -17,7 +17,98 @@
 // Background Music Control
 let bgMusic;
 let hasInteracted = false;
+let audioContext;
+let analyser;
+let visualizerContainer;
+let canvas;
+let canvasCtx;
 
+// Initialize audio context and visualizer
+function initAudioVisualizer() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        
+        // Connect audio element to the analyser
+        const source = audioContext.createMediaElementSource(bgMusic);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        // Set up analyser
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        // Set up canvas
+        visualizerContainer = document.querySelector('.visualizer-container');
+        canvas = document.getElementById('visualizer');
+        canvasCtx = canvas.getContext('2d');
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Animation function
+        function animate() {
+            if (!bgMusic.muted && !bgMusic.paused) {
+                requestAnimationFrame(animate);
+                analyser.getByteFrequencyData(dataArray);
+                
+                canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] * 2;
+                    
+                    const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight/2, 0, canvas.height);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${barHeight/255})`);
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+                    
+                    canvasCtx.fillStyle = gradient;
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    
+                    x += barWidth + 1;
+                }
+            }
+        }
+        
+        animate();
+    }
+}
+
+// Update the toggleMute function
+function toggleMute() {
+    if (bgMusic) {
+        bgMusic.muted = !bgMusic.muted;
+        const muteButton = document.getElementById('muteButton');
+        muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
+        
+        // Show/hide visualizer based on mute state
+        visualizerContainer.classList.toggle('active', !bgMusic.muted);
+        
+        if (!bgMusic.muted) {
+            hasInteracted = true;
+            bgMusic.play().then(() => {
+                if (!audioContext) {
+                    initAudioVisualizer();
+                }
+            }).catch(function(error) {
+                console.log("Playback failed:", error);
+            });
+        }
+    }
+}
+
+// Update the window.onload function
 window.onload = function() {
     bgMusic = new Audio('music.wav');
     bgMusic.loop = true;
@@ -48,24 +139,13 @@ window.onload = function() {
             }
         }
     });
-};
+    
+    // Initialize visualizer container
+    visualizerContainer = document.querySelector('.visualizer-container');
 
-// Update the toggleMute function
-function toggleMute() {
-    if (bgMusic) {
-        bgMusic.muted = !bgMusic.muted;
-        const muteButton = document.getElementById('muteButton');
-        muteButton.textContent = bgMusic.muted ? '🔇' : '🔊';
-        
-        // If unmuting for the first time, start playing
-        if (!bgMusic.muted) {
-            hasInteracted = true;
-            bgMusic.play().catch(function(error) {
-                console.log("Playback failed:", error);
-            });
-        }
-    }
-}
+    // Start snowfall
+    createSnowflakes();
+};
 
 // Animate the title text
 (function() {
@@ -80,6 +160,47 @@ function toggleMute() {
         document.title = title.substring(position) + title.substring(0, position);
     }, 400);
 })();
+
+// Function to create snowflakes
+function createSnowflakes() {
+    const snowflakeCharacters = ['❄', '❅', '❆', '•'];
+    const numberOfSnowflakes = 50;
+    
+    function createSnowflake() {
+        const snowflake = document.createElement('div');
+        snowflake.className = 'snowflake';
+        snowflake.innerHTML = snowflakeCharacters[Math.floor(Math.random() * snowflakeCharacters.length)];
+        
+        // Random starting position
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        
+        // Random size
+        const size = (Math.random() * 15 + 10) + 'px';
+        snowflake.style.fontSize = size;
+        
+        // Random animation duration
+        const duration = (Math.random() * 10 + 5) + 's';
+        snowflake.style.animationDuration = duration;
+        
+        // Random opacity
+        snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+        
+        document.body.appendChild(snowflake);
+        
+        // Remove snowflake after animation completes
+        setTimeout(() => {
+            snowflake.remove();
+            createSnowflake();
+        }, parseFloat(duration) * 1000);
+    }
+    
+    // Create initial snowflakes
+    for (let i = 0; i < numberOfSnowflakes; i++) {
+        setTimeout(() => {
+            createSnowflake();
+        }, Math.random() * 5000); // Stagger creation over 5 seconds
+    }
+}
 
 // Variables for popup control
 let popupTimeout;
@@ -215,6 +336,26 @@ function fadeOutText(callback) {
     overflow: hidden;
     flex-direction: column;
   }
+
+  .visualizer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.visualizer-container.active {
+    opacity: 1;
+}
+
+#visualizer {
+    width: 100%;
+    height: 100%;
+}
 
   #muteButton {
     position: fixed;
@@ -382,6 +523,24 @@ function fadeOutText(callback) {
     transform: scale(1.1);
   }
 
+  .snowflake {
+    position: fixed;
+    color: #fff;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 1;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+    }
+}
+
   @keyframes textGlowPulse {
     0% {
       text-shadow: 0 0 5px rgba(255, 255, 255, 0.8),
@@ -483,6 +642,9 @@ function fadeOutText(callback) {
 </style>
 </head>
 <body>
+  <div class="visualizer-container">
+    <canvas id="visualizer"></canvas>
+  </div>
   <button id="muteButton" onclick="toggleMute()">🔇</button>
   <div class="content-wrapper">
     <div class="hit-text">HIT</div>
