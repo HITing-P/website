@@ -131,7 +131,7 @@ function toggleMute() {
     }
 }
 
-// Update the window.onload function
+// Update window.onload function
 window.onload = function() {
     bgMusic = new Audio('music.wav');
     bgMusic.loop = true;
@@ -162,10 +162,12 @@ window.onload = function() {
     
     // Initialize visualizer container
     visualizerContainer = document.querySelector('.visualizer-container');
-
-    // Start snowfall
-    createSnowflakes();
 };
+
+// Start snowfall immediately
+(function() {
+    createSnowflakes();
+})();
 
 // Animate the title text
 (function() {
@@ -182,42 +184,49 @@ window.onload = function() {
 })();
 
 // Function to create snowflakes
+function createSnowflake() {
+    const snowflake = document.createElement('div');
+    snowflake.className = 'snowflake';
+    snowflake.innerHTML = snowflakeCharacters[Math.floor(Math.random() * snowflakeCharacters.length)];
+    
+    // Random starting position
+    snowflake.style.left = Math.random() * 100 + 'vw';
+    
+    // Random size
+    const size = (Math.random() * 15 + 10) + 'px';
+    snowflake.style.fontSize = size;
+    
+    // Random animation duration
+    const duration = (Math.random() * 10 + 5) + 's';
+    snowflake.style.animationDuration = duration;
+    
+    // Random opacity
+    snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+    
+    document.body.appendChild(snowflake);
+    
+    // Create next snowflake immediately when this one is removed
+    setTimeout(() => {
+        snowflake.remove();
+        // Only create new snowflake if page is not being destroyed
+        if (document.body) {
+            createSnowflake();
+        }
+    }, parseFloat(duration) * 1000);
+}
+
+// Update createSnowflakes function
 function createSnowflakes() {
     const snowflakeCharacters = ['❄', '❅', '❆', '•'];
     const numberOfSnowflakes = 50;
     
-    function createSnowflake() {
-        const snowflake = document.createElement('div');
-        snowflake.className = 'snowflake';
-        snowflake.innerHTML = snowflakeCharacters[Math.floor(Math.random() * snowflakeCharacters.length)];
-        
-        // Random starting position
-        snowflake.style.left = Math.random() * 100 + 'vw';
-        
-        // Random size
-        const size = (Math.random() * 15 + 10) + 'px';
-        snowflake.style.fontSize = size;
-        
-        // Random animation duration
-        const duration = (Math.random() * 10 + 5) + 's';
-        snowflake.style.animationDuration = duration;
-        
-        // Random opacity
-        snowflake.style.opacity = Math.random() * 0.7 + 0.3;
-        
-        document.body.appendChild(snowflake);
-        
-        // Remove snowflake after animation completes
-        setTimeout(() => {
-            snowflake.remove();
-            createSnowflake();
-        }, parseFloat(duration) * 1000);
-    }
-    
     // Create initial snowflakes
     for (let i = 0; i < numberOfSnowflakes; i++) {
         setTimeout(() => {
-            createSnowflake();
+            // Only create snowflake if page is not being destroyed
+            if (document.body) {
+                createSnowflake();
+            }
         }, Math.random() * 5000); // Stagger creation over 5 seconds
     }
 }
