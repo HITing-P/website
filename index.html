@@ -55,8 +55,12 @@ function initAudioVisualizer() {
         
         // Animation function
         function animate() {
+            requestAnimationFrame(animate);
+            
+            // Clear the canvas first
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
             if (!bgMusic.muted && !bgMusic.paused) {
-                requestAnimationFrame(animate);
                 analyser.getByteFrequencyData(dataArray);
                 
                 canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
@@ -82,6 +86,20 @@ function initAudioVisualizer() {
         }
         
         animate();
+
+        // Add event listeners for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    }
+}
+
+// Function to handle fullscreen changes
+function handleFullscreenChange() {
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
 }
 
@@ -101,6 +119,8 @@ function toggleMute() {
                 if (!audioContext) {
                     initAudioVisualizer();
                 }
+                // Ensure canvas is properly sized
+                handleFullscreenChange();
             }).catch(function(error) {
                 console.log("Playback failed:", error);
             });
@@ -123,9 +143,6 @@ window.onload = function() {
     bgMusic.addEventListener('error', function(e) {
         console.log("Error loading audio: ", e);
     });
-
-    // Remove the click listener for first interaction since we want it to stay paused
-    // We'll only start playing when unmute is explicitly clicked
 
     // Pause music when tab is not visible
     document.addEventListener('visibilitychange', function() {
@@ -341,8 +358,10 @@ function fadeOutText(callback) {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: -1;
     opacity: 0;
     transition: opacity 0.5s ease;
@@ -353,6 +372,9 @@ function fadeOutText(callback) {
 }
 
 #visualizer {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
 }
