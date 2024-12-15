@@ -23,6 +23,9 @@ let visualizerContainer;
 let canvas;
 let canvasCtx;
 
+// Snowflake characters array
+const snowflakeCharacters = ['❄', '❅', '❆', '•'];
+
 // Initialize audio context and visualizer
 function initAudioVisualizer() {
     if (!audioContext) {
@@ -164,25 +167,6 @@ window.onload = function() {
     visualizerContainer = document.querySelector('.visualizer-container');
 };
 
-// Start snowfall immediately
-(function() {
-    createSnowflakes();
-})();
-
-// Animate the title text
-(function() {
-    let title = "HIT's Bio ";  // Added space at end for smooth looping
-    let position = 0;
-    
-    setInterval(function() {
-        position++;
-        if(position >= title.length) {
-            position = 0;
-        }
-        document.title = title.substring(position) + title.substring(0, position);
-    }, 400);
-})();
-
 // Function to create snowflakes
 function createSnowflake() {
     const snowflake = document.createElement('div');
@@ -217,7 +201,6 @@ function createSnowflake() {
 
 // Update createSnowflakes function
 function createSnowflakes() {
-    const snowflakeCharacters = ['❄', '❅', '❆', '•'];
     const numberOfSnowflakes = 50;
     
     // Create initial snowflakes
@@ -230,6 +213,25 @@ function createSnowflakes() {
         }, Math.random() * 5000); // Stagger creation over 5 seconds
     }
 }
+
+// Start snowfall immediately
+window.addEventListener('DOMContentLoaded', () => {
+    createSnowflakes();
+});
+
+// Animate the title text
+(function() {
+    let title = "HIT's Bio ";  // Added space at end for smooth looping
+    let position = 0;
+    
+    setInterval(function() {
+        position++;
+        if(position >= title.length) {
+            position = 0;
+        }
+        document.title = title.substring(position) + title.substring(0, position);
+    }, 400);
+})();
 
 // Variables for popup control
 let popupTimeout;
