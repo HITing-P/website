@@ -1,0 +1,145 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Will you pass the exam?</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 40px;
+    }
+
+    .roulette-container {
+      width: 300px;
+      height: 60px;
+      overflow: hidden;
+      border: 3px solid #333;
+      border-radius: 10px;
+      position: relative;
+      background: white;
+      margin-bottom: 20px;
+    }
+
+    .roulette-strip {
+      display: flex;
+      position: absolute;
+      transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      left: 0;
+    }
+
+    .answer {
+      width: 300px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .yes { color: #2ecc71; }
+    .no { color: #e74c3c; }
+
+    button {
+      padding: 10px 30px;
+      font-size: 18px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    button:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    .greeting {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>Will you pass the webdesign exam?</h1>
+  
+  <div class="roulette-container">
+    <div class="roulette-strip" id="rouletteStrip">
+    </div>
+  </div>
+
+  <button onclick="spin()">Roll!</button>
+  <div class="greeting">hi mrs. jackson :D</div>
+
+  <script>
+    const rouletteStrip = document.querySelector('.roulette-strip');
+    const button = document.querySelector('button');
+    let isSpinning = false;
+    const itemWidth = 300;
+    const totalItems = 8;
+    const stripWidth = itemWidth * totalItems;
+
+    function generateRandomStrip() {
+      rouletteStrip.innerHTML = '';
+      for (let i = 0; i < totalItems; i++) {
+        const answer = Math.random() < 0.5 ? 'YES' : 'NO';
+        const div = document.createElement('div');
+        div.className = `answer ${answer.toLowerCase()}`;
+        div.textContent = answer;
+        rouletteStrip.appendChild(div);
+      }
+    }
+
+    generateRandomStrip();
+
+    function spin() {
+      if (isSpinning) return;
+      
+      isSpinning = true;
+      button.disabled = true;
+      
+      generateRandomStrip();
+      
+      rouletteStrip.style.transition = 'none';
+      rouletteStrip.style.transform = 'translateX(0)';
+      
+      rouletteStrip.offsetHeight;
+      
+      const rotations = -(Math.floor(Math.random() * 3) + 2) * stripWidth;
+      const finalOffset = -Math.floor(Math.random() * 8) * itemWidth;
+      const totalOffset = (rotations + finalOffset) % stripWidth;
+      
+      rouletteStrip.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+      rouletteStrip.style.transform = `translateX(${totalOffset}px)`;
+      
+      setTimeout(() => {
+        rouletteStrip.style.transition = 'none';
+        rouletteStrip.style.transform = `translateX(${totalOffset}px)`;
+        
+        isSpinning = false;
+        button.disabled = false;
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
