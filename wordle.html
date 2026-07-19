@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P2P Wordle</title>
+<style>
+  :root{
+    --bg:#121213; --panel:#1a1a1b; --border:#3a3a3c;
+    --green:#538d4e; --yellow:#b59f3b; --gray:#3a3a3c;
+    --text:#d7dadc; --accent:#538d4e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:"Helvetica Neue",Arial,sans-serif; display:flex; flex-direction:column; align-items:center;
+    padding:16px;
+  }
+  h1{letter-spacing:.15em; font-size:1.4rem; border-bottom:1px solid var(--border); padding-bottom:10px; width:100%; max-width:520px; text-align:center;}
+  .screen{display:none; width:100%; max-width:520px; flex-direction:column; align-items:center; gap:14px;}
+  .screen.active{display:flex;}
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 18px;
+    font-size:1rem; cursor:pointer; font-weight:600;
+  }
+  button.secondary{background:#2c2c2e;}
+  button:disabled{opacity:.5; cursor:not-allowed;}
+  input[type=text]{
+    background:#0f0f10; border:1px solid var(--border); color:var(--text); padding:10px;
+    border-radius:6px; font-size:1rem; width:100%;
+  }
+  .row{display:flex; gap:8px; width:100%;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; width:100%;}
+  #status-bar{min-height:1.2em; font-size:.85rem; color:#aaa; text-align:center;}
+  .link-box{display:flex; gap:8px; align-items:center;}
+  .link-box input{flex:1;}
+  #board{display:grid; gap:6px; margin:0 auto; justify-content:center;}
+  .tile{
+    width:52px; height:52px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; font-weight:700; text-transform:uppercase; background:var(--bg);
+  }
+  .tile.correct{background:var(--green); border-color:var(--green);}
+  .tile.present{background:var(--yellow); border-color:var(--yellow);}
+  .tile.absent{background:var(--gray); border-color:var(--gray);}
+  .tile.filled{border-color:#565758;}
+  .tile.selected{outline:2px solid #fff; outline-offset:-2px;}
+  #keyboard{display:flex; flex-direction:column; gap:6px; width:100%; max-width:500px;}
+  #keyboard .krow{display:flex; gap:5px; justify-content:center;}
+  .key{
+    background:#818384; color:#fff; border:none; border-radius:4px; padding:12px 6px; min-width:30px;
+    font-size:.85rem; font-weight:600; cursor:pointer; flex:1; text-transform:uppercase;
+  }
+  .key.wide{flex:1.6; font-size:.7rem;}
+  .key.correct{background:var(--green);}
+  .key.present{background:var(--yellow);}
+  .key.absent{background:var(--gray); color:#888;}
+  #game-status{font-size:.95rem; text-align:center; min-height:1.3em;}
+  .end-msg{font-size:1.3rem; font-weight:700; text-align:center;}
+  .end-word{font-size:1.05rem; color:#ccc;}
+  .kb-toggle{align-self:flex-end;}
+  small.hint{color:#888;}
+  .copied-msg{color:var(--green); font-size:.85rem;}
+</style>
+</head>
+<body>
+<h1>P2P WORDLE</h1>
+
+<div id="status-bar"></div>
+
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <p>Play Wordle live with a friend, peer-to-peer (no server, no accounts).</p>
+    <div class="row">
+      <button id="btn-host">Host a game</button>
+      <button id="btn-join" class="secondary">Join a game</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-join" class="screen">
+  <div class="card">
+    <p>Enter the game code (or paste the full link) your friend sent you:</p>
+    <input type="text" id="join-id-input" placeholder="Game code or full link">
+    <br><br>
+    <button id="btn-connect">Connect</button>
+  </div>
+</div>
+
+<div id="screen-host" class="screen">
+  <div class="card" id="link-section">
+    <p>Give your friend this code...</p>
+    <div id="host-code" style="font-size:2rem;letter-spacing:.25em;font-weight:700;text-align:center;padding:8px 0;"></div>
+    <p>...or send them this link directly:</p>
+    <div class="link-box">
+      <input type="text" id="host-link" readonly>
+      <button id="btn-copy">Copy link</button>
+    </div>
+    <div class="copied-msg" id="copied-msg" style="visibility:hidden">Copied!</div>
+  </div>
+  <div class="card">
+    <p id="word-form-label">Choose a secret word (any length, English or Cyrillic letters):</p>
+    <input type="text" id="word-input" placeholder="Secret word" autocomplete="off">
+    <br><br>
+    <button id="btn-send-word">Send word</button>
+    <small class="hint" id="word-error"></small>
+  </div>
+</div>
+
+<div id="screen-waiting" class="screen">
+  <div class="card">
+    <p id="waiting-text">Waiting...</p>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div id="game-status"></div>
+  <div id="board"></div>
+  <button class="kb-toggle secondary" id="btn-toggle-lang" style="display:none">RU/EN</button>
+  <div id="keyboard"></div>
+</div>
+
+<div id="screen-end" class="screen">
+  <div class="card" style="text-align:center;">
+    <div class="end-msg" id="end-msg"></div>
+    <div class="end-word" id="end-word"></div>
+  </div>
+  <div id="end-actions" class="row" style="display:none;">
+    <button id="btn-new-word">Choose another word</button>
+    <button id="btn-swap-role" class="secondary">Let opponent choose a word</button>
+    <button id="btn-back-menu" class="secondary">Back to menu</button>
+  </div>
+  <div id="end-waiting" class="card" style="display:none;"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---- end-to-end encryption on top of WebRTC's own DTLS transport layer --
+  // ECDH (P-256) key exchange + AES-GCM, both native Web Crypto, no library.
+  // Note on limits: this stops a passive observer of the signaling/data
+  // traffic from reading the word or guesses. It cannot hide anything from
+  // either PLAYER themselves (they're the legitimate holders of the key and
+  // can always read their own decrypted traffic via devtools) - no client-
+  // side scheme can protect a secret from the client running it.
+  let cryptoKeyPair = null, sharedKey = null;
+  let sendQueue = [];
+  async function initCrypto() {
+    cryptoKeyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
+  }
+  async function exportPubKey() {
+    const raw = await crypto.subtle.exportKey('raw', cryptoKeyPair.publicKey);
+    return Array.from(new Uint8Array(raw));
+  }
+  async function onPeerPubKey(arr) {
+    const pubKey = await crypto.subtle.importKey('raw', new Uint8Array(arr), { name: 'ECDH', namedCurve: 'P-256' }, true, []);
+    sharedKey = await crypto.subtle.deriveKey({ name: 'ECDH', public: pubKey }, cryptoKeyPair.privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    const q = sendQueue; sendQueue = [];
+    q.forEach(sendSecure);
+  }
+  async function sendSecure(obj) {
+    if (!sharedKey) { sendQueue.push(obj); return; }
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const pt = new TextEncoder().encode(JSON.stringify(obj));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, sharedKey, pt);
+    conn.send({ type: 'enc', iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) });
+  }
+  async function onEncrypted(msg) {
+    try {
+      const iv = new Uint8Array(msg.iv);
+      const ct = new Uint8Array(msg.ct);
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, sharedKey, ct);
+      handleMessage(JSON.parse(new TextDecoder().decode(pt)));
+    } catch (err) {
+      statusMsg('Could not decrypt an incoming message.');
+    }
+  }
+
+  // ---- standard two-pass Wordle evaluation (handles duplicate letters) ----
+  function evaluateGuess(guessChars, answerChars) {
+    const len = answerChars.length;
+    const result = new Array(len).fill('absent');
+    const counts = {};
+    for (const c of answerChars) counts[c] = (counts[c] || 0) + 1;
+    for (let i = 0; i < len; i++) {
+      if (guessChars[i] === answerChars[i]) { result[i] = 'correct'; counts[guessChars[i]]--; }
+    }
+    for (let i = 0; i < len; i++) {
+      if (result[i] === 'correct') continue;
+      const c = guessChars[i];
+      if (counts[c] > 0) { result[i] = 'present'; counts[c]--; }
+    }
+    return result;
+  }
+
+  // no 0/O/1/I/L - avoids characters that are easy to misread when spoken/typed
+  const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function genCode(len = 6) {
+    let s = '';
+    for (let i = 0; i < len; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+    return s;
+  }
+
+  const LETTER_RE = /^[A-Za-zА-Яа-яЁё]$/;
+  const WORD_RE = /^[A-Za-zА-Яа-яЁё]+$/;
+
+  const KB_EN = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['ENTER','Z','X','C','V','B','N','M','BACK']
+  ];
+  const KB_RU = [
+    ['Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х'],
+    ['Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э'],
+    ['ENTER','Я','Ч','С','М','И','Т','Ь','Б','Ю','BACK']
+  ];
+
+  // ---------- state ----------
+  let peer = null, conn = null;
+  let myRole = null;       // 'setter' | 'guesser'
+  let answerChars = [];    // plaintext answer, known locally once available
+  let wordLength = 0;
+  let currentRow = 0;
+  let currentGuess = '';
+  let gameOver = false;
+  let pendingWord = null;
+  let keyState = {};       // letter -> 'correct'|'present'|'absent'
+  let kbLang = 'en';
+  let scriptMixed = false; // word contains both Latin and Cyrillic letters
+  let selectAllMode = false;
+
+  function computeScript(chars) {
+    const joined = chars.join('');
+    return { hasLatin: /[A-Za-z]/.test(joined), hasCyrillic: /[А-Яа-яЁё]/.test(joined) };
+  }
+  function refreshLangToggle() {
+    $('btn-toggle-lang').style.display = (myRole === 'guesser' && scriptMixed) ? '' : 'none';
+  }
+
+  // ---------- dom helpers ----------
+  const $ = id => document.getElementById(id);
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $('screen-' + id).classList.add('active');
+  }
+  function statusMsg(t) { $('status-bar').textContent = t || ''; }
+  function waitingMsg(t) { $('waiting-text').textContent = t; showScreen('waiting'); }
+  function gameStatus(t) { $('game-status').textContent = t; }
+
+  // ---------- peer / connection setup ----------
+  function initHostPeer(attempt) {
+    attempt = attempt || 0;
+    peer = new Peer(genCode());
+    peer.on('open', id => {
+      $('host-code').textContent = id;
+      const link = location.origin + location.pathname + '?join=' + id;
+      $('host-link').value = link;
+      showScreen('host');
+      statusMsg('Waiting for a friend to connect...');
+    });
+    peer.on('connection', c => setupConnection(c, false));
+    peer.on('error', e => {
+      if (e.type === 'unavailable-id' && attempt < 5) { peer.destroy(); initHostPeer(attempt + 1); return; }
+      statusMsg('Connection problem: ' + e.type);
+    });
+  }
+
+  function initJoinPeer(hostId) {
+    if (!hostId) { statusMsg('Enter a game ID first.'); return; }
+    statusMsg('Connecting...');
+    peer = new Peer();
+    peer.on('open', () => {
+      const c = peer.connect(hostId, { reliable: true });
+      setupConnection(c, true);
+      c.on('error', () => statusMsg('Could not reach that game. Check the ID/link and try again.'));
+    });
+    peer.on('error', e => {
+      if (e.type === 'peer-unavailable') statusMsg('Game not found. Check the ID/link and try again.');
+      else statusMsg('Connection problem: ' + e.type);
+    });
+  }
+
+  function setupConnection(c, isJoiner) {
+    conn = c;
+    myRole = isJoiner ? 'guesser' : 'setter';
+    conn.on('open', async () => {
+      statusMsg('Connected to opponent. Securing channel...');
+      await initCrypto();
+      conn.send({ type: 'pubkey', key: await exportPubKey() });
+      if (myRole === 'setter') {
+        $('link-section').style.display = 'none';
+        showScreen('host');
+        if (pendingWord) sendWord(pendingWord);
+      } else {
+        waitingMsg('Connected! Waiting for opponent to choose a word...');
+      }
+    });
+    conn.on('data', raw => {
+      if (raw.type === 'pubkey') { onPeerPubKey(raw.key).then(() => statusMsg('Connected to opponent (encrypted).')); }
+      else if (raw.type === 'enc') onEncrypted(raw);
+    });
+    conn.on('close', () => statusMsg('Opponent disconnected.'));
+    conn.on('error', e => statusMsg('Connection error.'));
+  }
+
+  // ---------- messaging ----------
+  function handleMessage(msg) {
+    if (msg.type === 'word') {
+      answerChars = Array.from(msg.payload);
+      wordLength = answerChars.length;
+      myRole = 'guesser';
+      gameOver = false; currentRow = 0; currentGuess = ''; keyState = {}; selectAllMode = false;
+      const script = computeScript(answerChars);
+      scriptMixed = script.hasLatin && script.hasCyrillic;
+      kbLang = (script.hasCyrillic && !script.hasLatin) ? 'ru' : 'en';
+      buildBoard(wordLength);
+      buildKeyboard();
+      refreshLangToggle();
+      showScreen('game');
+      gameStatus('Guess the word!');
+    } else if (msg.type === 'guess') {
+      if (!document.querySelector('#screen-game.active')) {
+        wordLength = msg.result.length;
+        buildBoard(wordLength);
+        $('keyboard').innerHTML = '';
+        refreshLangToggle();
+        showScreen('game');
+        gameStatus("Opponent is guessing...");
+      }
+      const chars = Array.from(msg.guess);
+      renderRow(currentRow, chars, msg.result);
+      currentRow++;
+    } else if (msg.type === 'end') {
+      showEndScreen(msg.won, msg.word, false);
+    } else if (msg.type === 'roleswap') {
+      myRole = 'setter';
+      showScreen('host');
+      $('word-input').value = '';
+      statusMsg('Your turn to pick a word!');
+    }
+  }
+
+  // ---------- word setter flow ----------
+  function submitWord() {
+    const val = $('word-input').value.trim();
+    $('word-error').textContent = '';
+    if (!WORD_RE.test(val)) {
+      $('word-error').textContent = 'Enter a word using only English or Cyrillic letters.';
+      return;
+    }
+    pendingWord = val;
+    if (conn && conn.open) sendWord(val);
+    else statusMsg('Word saved. Waiting for opponent to connect...');
+  }
+
+  function sendWord(word) {
+    const chars = Array.from(word.toUpperCase());
+    answerChars = chars;
+    wordLength = chars.length;
+    myRole = 'setter';
+    sendSecure({ type: 'word', payload: word.toUpperCase(), length: chars.length });
+    pendingWord = null;
+    gameOver = false; currentRow = 0;
+    const script = computeScript(answerChars);
+    scriptMixed = script.hasLatin && script.hasCyrillic;
+    buildBoard(wordLength);
+    $('keyboard').innerHTML = '';
+    refreshLangToggle();
+    showScreen('game');
+    gameStatus('Word sent! Waiting for opponent to guess...');
+  }
+
+  // ---------- board / keyboard rendering ----------
+  function buildBoard(len) {
+    const board = $('board');
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${len}, minmax(0,1fr))`;
+    const tileSize = Math.max(24, Math.min(52, Math.floor(480 / len) - 6));
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < len; c++) {
+        const t = document.createElement('div');
+        t.className = 'tile';
+        t.style.width = tileSize + 'px';
+        t.style.height = tileSize + 'px';
+        t.style.fontSize = Math.max(12, tileSize * 0.45) + 'px';
+        t.dataset.row = r; t.dataset.col = c;
+        board.appendChild(t);
+      }
+    }
+  }
+
+  function tileAt(r, c) { return document.querySelector(`.tile[data-row="${r}"][data-col="${c}"]`); }
+
+  function renderRow(r, chars, result) {
+    for (let c = 0; c < chars.length; c++) {
+      const t = tileAt(r, c);
+      if (!t) continue;
+      t.textContent = chars[c];
+      t.className = 'tile ' + (result ? result[c] : 'filled');
+    }
+    if (result) {
+      for (let c = 0; c < chars.length; c++) {
+        const letter = chars[c];
+        const rank = { absent: 0, present: 1, correct: 2 };
+        if (rank[result[c]] > (rank[keyState[letter]] ?? -1)) keyState[letter] = result[c];
+      }
+      applyKeyColors();
+    }
+  }
+
+  function updateCurrentRowDisplay() {
+    for (let c = 0; c < wordLength; c++) {
+      const t = tileAt(currentRow, c);
+      if (!t) continue;
+      const ch = currentGuess[c];
+      t.textContent = ch || '';
+      t.className = 'tile' + (ch ? ' filled' : '');
+    }
+  }
+
+  function buildKeyboard() {
+    const kb = $('keyboard');
+    kb.innerHTML = '';
+    const rows = kbLang === 'en' ? KB_EN : KB_RU;
+    rows.forEach(rowKeys => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'krow';
+      rowKeys.forEach(k => {
+        const btn = document.createElement('button');
+        btn.className = 'key' + (k === 'ENTER' || k === 'BACK' ? ' wide' : '');
+        btn.textContent = k === 'ENTER' ? 'Enter' : k === 'BACK' ? '⌫' : k;
+        btn.dataset.key = k;
+        btn.onclick = () => onKeyPress(k);
+        rowEl.appendChild(btn);
+      });
+      kb.appendChild(rowEl);
+    });
+    applyKeyColors();
+  }
+
+  function applyKeyColors() {
+    document.querySelectorAll('#keyboard .key').forEach(btn => {
+      const k = btn.dataset.key;
+      btn.classList.remove('correct', 'present', 'absent');
+      if (keyState[k]) btn.classList.add(keyState[k]);
+    });
+  }
+
+  $('btn-toggle-lang').onclick = () => {
+    kbLang = kbLang === 'en' ? 'ru' : 'en';
+    if (myRole === 'guesser' && !gameOver) buildKeyboard();
+  };
+
+  // ---------- guessing ----------
+  function onKeyPress(k) {
+    if (myRole !== 'guesser' || gameOver) return;
+    if (k === 'ENTER') submitGuess();
+    else if (k === 'BACK') removeLetter();
+    else addLetter(k);
+  }
+  function addLetter(ch) {
+    if (currentGuess.length < wordLength) {
+      currentGuess += ch.toUpperCase();
+      updateCurrentRowDisplay();
+    }
+  }
+  function removeLetter() {
+    currentGuess = currentGuess.slice(0, -1);
+    updateCurrentRowDisplay();
+  }
+  function clearGuess() {
+    currentGuess = '';
+    updateCurrentRowDisplay();
+  }
+  function highlightSelectAll(on) {
+    for (let c = 0; c < wordLength; c++) {
+      const t = tileAt(currentRow, c);
+      if (t) t.classList.toggle('selected', on);
+    }
+  }
+  function submitGuess() {
+    if (currentGuess.length !== wordLength) {
+      gameStatus('Not enough letters!');
+      return;
+    }
+    const guessChars = Array.from(currentGuess);
+    const result = evaluateGuess(guessChars, answerChars);
+    renderRow(currentRow, guessChars, result);
+    if (conn && conn.open) sendSecure({ type: 'guess', guess: currentGuess, result });
+    const won = result.every(r => r === 'correct');
+    currentRow++;
+    currentGuess = '';
+    if (won || currentRow >= 6) {
+      gameOver = true;
+      const word = answerChars.join('');
+      if (conn && conn.open) sendSecure({ type: 'end', won, word });
+      showEndScreen(won, word, true);
+    } else {
+      gameStatus(`Guess ${currentRow + 1} of 6`);
+    }
+  }
+
+  window.addEventListener('keydown', e => {
+    if (myRole !== 'guesser' || gameOver || !document.querySelector('#screen-game.active')) return;
+    if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      selectAllMode = true;
+      highlightSelectAll(true);
+      return;
+    }
+    if (selectAllMode && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault();
+      selectAllMode = false;
+      highlightSelectAll(false);
+      clearGuess();
+      return;
+    }
+    if (selectAllMode) { selectAllMode = false; highlightSelectAll(false); }
+    if (e.key === 'Enter') submitGuess();
+    else if (e.key === 'Backspace') removeLetter();
+    else if (LETTER_RE.test(e.key)) addLetter(e.key);
+  });
+
+  // ---------- end of round ----------
+  function showEndScreen(won, word, wasGuesser) {
+    gameOver = true;
+    showScreen('end');
+    $('end-msg').textContent = won ? 'Correct! 🎉' : 'Out of guesses!';
+    $('end-word').textContent = 'The word was: ' + word;
+    if (wasGuesser) {
+      $('end-actions').style.display = 'none';
+      $('end-waiting').style.display = 'block';
+      $('end-waiting').textContent = 'Waiting for opponent to decide what happens next...';
+    } else {
+      $('end-actions').style.display = 'flex';
+      $('end-waiting').style.display = 'none';
+    }
+  }
+
+  $('btn-new-word').onclick = () => {
+    $('link-section').style.display = 'none';
+    $('word-input').value = '';
+    $('word-error').textContent = '';
+    showScreen('host');
+  };
+  $('btn-swap-role').onclick = () => {
+    if (conn && conn.open) sendSecure({ type: 'roleswap' });
+    myRole = 'guesser';
+    waitingMsg('Waiting for opponent to choose a word...');
+  };
+  $('btn-back-menu').onclick = resetToMenu;
+
+  function resetToMenu() {
+    if (conn) conn.close();
+    if (peer) peer.destroy();
+    peer = null; conn = null;
+    myRole = null; answerChars = []; wordLength = 0; currentRow = 0; currentGuess = '';
+    gameOver = false; pendingWord = null; keyState = {}; kbLang = 'en'; scriptMixed = false; selectAllMode = false;
+    cryptoKeyPair = null; sharedKey = null; sendQueue = [];
+    $('host-link').value = ''; $('host-code').textContent = '';
+    $('word-input').value = ''; $('word-error').textContent = '';
+    $('join-id-input').value = '';
+    $('link-section').style.display = '';
+    history.replaceState(null, '', location.pathname);
+    statusMsg('');
+    showScreen('home');
+  }
+
+  // ---------- home / join / host wiring ----------
+  $('btn-host').onclick = () => { showScreen('host'); statusMsg('Creating game...'); initHostPeer(); };
+  $('btn-join').onclick = () => showScreen('join');
+  $('btn-connect').onclick = () => {
+    let val = $('join-id-input').value.trim();
+    const m = val.match(/[?&]join=([^&]+)/i);
+    if (m) val = decodeURIComponent(m[1]);
+    initJoinPeer(val.toUpperCase());
+  };
+  $('btn-send-word').onclick = submitWord;
+  $('btn-copy').onclick = () => {
+    const link = $('host-link');
+    link.select();
+    navigator.clipboard.writeText(link.value).then(() => {
+      const msg = $('copied-msg');
+      msg.style.visibility = 'visible';
+      setTimeout(() => msg.style.visibility = 'hidden', 1500);
+    });
+  };
+
+  // ---------- auto-join via ?join= ----------
+  const params = new URLSearchParams(location.search);
+  const joinId = params.get('join');
+  if (joinId) {
+    showScreen('join');
+    $('join-id-input').value = joinId;
+    initJoinPeer(joinId.toUpperCase());
+  }
+})();
+</script>
+</body>
+</html>
